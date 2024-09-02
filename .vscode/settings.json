@@ -1,0 +1,7 @@
+{
+    "ansible.python.interpreterPath": "/opt/homebrew/bin/python3",
+    "yaml.schemas": {
+        "kubernetes": "*.yaml",
+        "https://raw.githubusercontent.com/ansible/ansible-lint/main/src/ansiblelint/schemas/ansible.json#/$defs/playbook": "file:///Users/bozeak/temp/ansible/roles/firefox.yaml"
+    }
+}

@@ -1,0 +1,8 @@
+- name: Install AMEPHEAS
+  hosts: all
+  tasks:
+    - name: Create 'docker_assets' folder
+      become: true
+      ansible.builtin.file:
+        path: /docker_assets
+        state: directory

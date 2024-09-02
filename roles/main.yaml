@@ -1,0 +1,11 @@
+- name: Install Docker
+  ansible.builtin.import_playbook: docker.yaml
+
+- name: Install AMEPHEAS
+  ansible.builtin.import_playbook: ame.yaml
+
+- name: Install Desktop
+  ansible.builtin.import_playbook: minimal_desktop.yaml
+
+- name: Configure Firefox
+  ansible.builtin.import_playbook: firefox.yaml

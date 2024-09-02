@@ -1,0 +1,62 @@
+- name: Setup Firefox browser
+  hosts: all
+  tasks:
+    # Install Firefox
+    - name: Check Firefox presence
+      become: true
+      package:
+        name:
+          - firefox
+        state: present
+
+    # Check if a profile folder exists
+    - name: Check Firefox config folder
+      find:
+        paths: "{{ ansible_user_dir }}/snap/firefox/common/.mozilla/firefox"
+        patterns: '^.*\.default'
+        use_regex: true
+        file_type: directory
+      register: firefox_config_folder_search
+
+    # If profile folder doesn't exist, start Firefox
+    - name: Starting Firefox
+      shell:
+        cmd: "firefox &"
+      changed_when: false
+      when: firefox_config_folder_search.matched == 0
+
+    - name: Waiting for Firefox to start
+      command: sleep 30s
+      changed_when: false
+      when: firefox_config_folder_search.matched == 0
+
+    # Kill Firefox
+    - name: Killing Firefox
+      shell:
+        cmd: kill $(pidof firefox)
+      changed_when: false
+      when: firefox_config_folder_search.matched == 0
+
+    # Search for the newly created profile directory
+    - name: Check Firefox config folder again
+      find:
+        paths: "{{ ansible_user_dir }}/snap/firefox/common/.mozilla/firefox"
+        patterns: '^.*\.default'
+        use_regex: true
+        file_type: directory
+      register: firefox_config_folder_search
+
+    # Set a fact with the profile directory path
+    - name: Set firefox folder name as fact
+      set_fact:
+        firefox_config_folder_path: "{{ firefox_config_folder_search.files[0].path }}"
+
+    # Add in the custom config
+    - name: Add in Firefox config
+      copy:
+        src: files/firefox/user.js
+        dest: "{{ firefox_config_folder_path }}/user.js"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: 0644
+      when: firefox_config_folder_path != 'false'

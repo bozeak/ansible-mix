@@ -1,0 +1,17 @@
+- name: Install Ubuntu minimal desktop and LibreOffice
+  hosts: all
+  tasks:
+    - name: Ping my hosts
+      ansible.builtin.ping:
+
+    - name: Update apt packages
+      become: true
+      apt:
+        update_cache: yes
+
+    - name: Install packages
+      become: true
+      ansible.builtin.apt:
+        pkg:
+          - ubuntu-desktop-minimal
+          - libreoffice

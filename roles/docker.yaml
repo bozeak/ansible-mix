@@ -1,0 +1,106 @@
+- name: Install Docker
+  hosts: all
+  tasks:
+    - name: Ping my hosts
+      ansible.builtin.ping:
+
+    - name: Update apt packages
+      become: true
+      apt:
+        update_cache: yes
+
+    - name: Install ca-certificates and curl
+      become: true
+      ansible.builtin.apt:
+        pkg:
+          - ca-certificates
+          - curl
+
+    - name: Ensure /etc/apt/keyrings directory is created with mode 0755
+      become: true
+      ansible.builtin.command: 
+        cmd: "install -m 0755 -d /etc/apt/keyrings"
+
+    - name: Download Docker GPG key to /etc/apt/keyrings/docker.asc
+      ansible.builtin.get_url:
+        url: "https://download.docker.com/linux/ubuntu/gpg"
+        dest: "/etc/apt/keyrings/docker.asc"
+        mode: '0644'  # Set file permission
+      become: yes  # Escalate privileges to save the file in a protected directory
+
+    - name: Set permissions on /etc/apt/keyrings/docker.asc
+      ansible.builtin.file:
+        path: /etc/apt/keyrings/docker.asc
+        mode: a+r
+      become: yes
+
+    - name: Add Docker APT repository
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=arm64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_lsb.codename }} stable"
+        state: present  # Ensure the repository is present
+        filename: "docker"  # Save to /etc/apt/sources.list.d/docker.list
+      become: yes  # Run with sudo
+
+    - name: Update APT package index with forced cache update
+      become: true
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 0  # Force update without considering cache validity
+        force_apt_get: yes
+
+    # - name: Update apt packages
+    #   become: true
+    #   ansible.builtin.apt:
+    #     update_cache: yes
+      
+    # docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    - name: Install latest Docker
+      become: true
+      ansible.builtin.apt:
+        pkg:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        update_cache: true
+        cache_valid_time: 0  # Force update without considering cache validity
+        force_apt_get: yes
+        
+    - name: Run the "hello-world" Docker container and capture output
+      ansible.builtin.command: 
+        cmd: "docker run hello-world"
+      become: yes  # Run with sudo privileges
+      register: docker_run_output  # Register the output in a variable
+
+    - name: Display Docker run output
+      ansible.builtin.debug:
+        var: docker_run_output.stdout  # Show the captured standard output
+
+    - name: Ensure group "docker" exists
+      become: true
+      ansible.builtin.group:
+        name: docker
+        state: present
+
+    - name: Add user to group "docker"
+      become: true
+      ansible.builtin.user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
+
+    - name: Restart Docker service
+      become: true
+      ansible.builtin.systemd:
+        name: docker
+        state: restarted
+    
+    - name: Run the "hello-world" Docker container and capture output (no-sudo)
+      ansible.builtin.command: 
+        cmd: "docker run hello-world"
+      register: docker_run_output_no_sudo  # Register the output in a variable
+
+    - name: Display Docker run output
+      ansible.builtin.debug:
+        var: docker_run_output_no_sudo.stdout  # Show the captured standard output
